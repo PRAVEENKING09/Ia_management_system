@@ -226,7 +226,7 @@ export const DirectorySection = memo(({ selectedDept, deptStudents, handleDeptCl
                 <table className={styles.table}>
                     <thead>
                         <tr>
-                            <th>Roll No</th>
+                            <th>Reg No</th>
                             <th>Name</th>
                             <th>Sem</th>
                             <th>Section</th>

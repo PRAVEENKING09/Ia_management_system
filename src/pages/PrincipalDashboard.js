@@ -69,7 +69,7 @@ const PrincipalDashboard = () => {
             onClick: () => setActiveTab('overview')
         },
         {
-            label: 'IA Compliance Monitor',
+            label: 'CIE Compliance Monitor',
             path: '/dashboard/principal/compliance',
             icon: <ShieldCheck size={20} />,
             isActive: activeTab === 'compliance',
@@ -123,7 +123,7 @@ const PrincipalDashboard = () => {
     const barData = useMemo(() => ({
         labels: collegeStats.branches,
         datasets: [{
-            label: 'Avg IA Performance (%)',
+            label: 'Avg CIE Performance (%)',
             data: collegeStats.branchPerformance,
             backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
             borderRadius: 6

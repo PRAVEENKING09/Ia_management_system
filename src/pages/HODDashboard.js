@@ -659,7 +659,7 @@ const HODDashboard = () => {
                                         <table className={styles.table}>
                                             <thead>
                                                 <tr>
-                                                    <th>Roll No</th>
+                                                    <th>Reg No</th>
                                                     <th>Name</th>
                                                     <th>Attendance</th>
                                                     <th>Avg Marks</th>

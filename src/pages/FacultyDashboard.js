@@ -44,11 +44,11 @@ const FacultyDashboard = () => {
             onClick: () => { setActiveSection('My Students'); setSelectedSubject(null); }
         },
         {
-            label: 'IA Entry',
+            label: 'CIE Entry',
             path: '/dashboard/faculty',
             icon: <FilePlus size={20} />,
-            isActive: activeSection === 'IA Entry',
-            onClick: () => { setActiveSection('IA Entry'); setSelectedSubject(null); }
+            isActive: activeSection === 'CIE Entry',
+            onClick: () => { setActiveSection('CIE Entry'); setSelectedSubject(null); }
         },
     ];
 
@@ -61,7 +61,7 @@ const FacultyDashboard = () => {
 
     const handleSubjectClick = (subject) => {
         setSelectedSubject(subject);
-        setActiveSection('IA Entry');
+        setActiveSection('CIE Entry');
         // Mock fetch marks for this subject
         // In a real app we would fetch by subjectId
         const marksMap = {};
@@ -93,9 +93,9 @@ const FacultyDashboard = () => {
             }
 
             marksMap[student.id] = {
-                'IA1': {
+                'CIE1': {
                     student: { id: student.id },
-                    iaType: 'IA1',
+                    iaType: 'CIE1',
                     cie1Score: cie1,
                     cie2Score: cie2
                 }
@@ -128,7 +128,7 @@ const FacultyDashboard = () => {
     const calculateAverage = (student) => {
         if (selectedSubject) {
             const sMarks = marks[student.id] || {};
-            const ia1Mark = sMarks['IA1'] || {};
+            const ia1Mark = sMarks['CIE1'] || {};
             const valCIE1 = sMarks.cie1 !== undefined ? sMarks.cie1 : (ia1Mark.cie1Score != null ? ia1Mark.cie1Score : 0);
             const valCIE2 = sMarks.cie2 !== undefined ? sMarks.cie2 : (ia1Mark.cie2Score != null ? ia1Mark.cie2Score : 0);
             return (Number(valCIE1) || 0) + (Number(valCIE2) || 0);
@@ -155,7 +155,7 @@ const FacultyDashboard = () => {
 
         try {
             await Promise.all(updates);
-            showToast('IA Marks Saved & Synced!', 'success');
+            showToast('CIE Marks Saved & Synced!', 'success');
         } catch (e) {
             showToast('Error saving marks', 'error');
         } finally {
@@ -165,7 +165,7 @@ const FacultyDashboard = () => {
 
     // --- NEW FEATURE: EXPORT CSV ---
     const downloadCSV = () => {
-        const headers = ['Roll No', 'Name', 'Section', 'Batch', 'IA-1', 'IA-2', 'IA-3', 'Average'];
+        const headers = ['Reg No', 'Name', 'Section', 'Batch', 'CIE-1', 'CIE-2', 'CIE-3', 'Average'];
         const rows = marks.map(s => [
             s.rollNo,
             s.name,
@@ -183,7 +183,7 @@ const FacultyDashboard = () => {
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `IA_Marks_Export.csv`);
+        link.setAttribute("download", `CIE_Marks_Export.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -300,7 +300,7 @@ const FacultyDashboard = () => {
             <div className={styles.analyticsGrid}>
                 {/* Same Analytics cards as before */}
                 <div className={styles.analyticsCard}>
-                    <h3 className={styles.analyticsTitle}>IA STATUS</h3>
+                    <h3 className={styles.analyticsTitle}>CIE STATUS</h3>
                     <div className={styles.analyticsContent}>
                         <div className={styles.statItem}>
                             <span className={styles.statValue}>{facultySubjects.reduce((acc, curr) => acc + curr.studentCount, 0)}</span>
@@ -431,7 +431,7 @@ const FacultyDashboard = () => {
                         <table className={styles.table}>
                             <thead>
                                 <tr>
-                                    <th>Roll No</th>
+                                    <th>Reg No</th>
                                     <th>Name</th>
                                     <th>Semester</th>
                                     <th>Section</th>
@@ -468,7 +468,7 @@ const FacultyDashboard = () => {
         );
     };
 
-    const renderIAEntry = () => {
+    const renderCIEEntry = () => {
         if (!selectedSubject) {
             return (
                 <div className={styles.emptyState}>
@@ -533,8 +533,8 @@ const FacultyDashboard = () => {
                                     const sMarks = marks[student.id] || {};
                                     // Mapping logic: local edits override API data
                                     // In handleSubjectClick, we populated 'marks' with API data using [iaType] keys.
-                                    // 'IA1' is hardcoded for now, as per HOD dashboard.
-                                    const ia1Mark = sMarks['IA1'] || {};
+                                    // 'CIE1' is hardcoded for now, as per HOD dashboard.
+                                    const ia1Mark = sMarks['CIE1'] || {};
 
                                     // Check if we have a direct edit (top-level key) or fallback to API object
                                     const valCIE1 = sMarks.cie1 !== undefined ? sMarks.cie1 : (ia1Mark.cie1Score != null ? ia1Mark.cie1Score : '');
@@ -592,7 +592,7 @@ const FacultyDashboard = () => {
 
             {activeSection === 'Overview' && renderOverview()}
             {activeSection === 'My Students' && renderMyStudents()}
-            {activeSection === 'IA Entry' && renderIAEntry()}
+            {activeSection === 'CIE Entry' && renderCIEEntry()}
 
             {/* MODALS */}
             {renderStudentProfileModal()}
