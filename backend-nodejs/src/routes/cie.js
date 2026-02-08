@@ -45,13 +45,74 @@ router.get('/student/announcements', authMiddleware, roleMiddleware('STUDENT'), 
     }
 });
 
-// Get Student Notifications (Mock for now, can be expanded)
-router.get('/student/notifications', authMiddleware, roleMiddleware('STUDENT'), (req, res) => {
-    // Mock notifications
-    res.json([
-        { id: 1, message: 'CIE 1 Marks for Engineering Maths-II are out!', type: 'CIE_ANNOUNCEMENT', isRead: false, createdAt: new Date() },
-        { id: 2, message: 'Attendance for Physics is below 75%', type: 'ATTENDANCE_ALERT', isRead: true, createdAt: new Date(Date.now() - 86400000) }
-    ]);
+// Get Student Notifications (Based on their subjects and marks)
+router.get('/student/notifications', authMiddleware, roleMiddleware('STUDENT'), async (req, res) => {
+    try {
+        const studentRegNo = req.user.username;
+
+        // Find student first
+        const student = await Student.findOne({ where: { regNo: studentRegNo } });
+
+        if (!student) {
+            return res.json([
+                { id: 1, message: 'Welcome to the IA Management System!', type: 'INFO', isRead: false, createdAt: new Date() }
+            ]);
+        }
+
+        // Find student's subjects through their marks using studentId
+        const studentMarks = await CIEMark.findAll({
+            where: { studentId: student.id },
+            include: [
+                { model: Subject, as: 'subject', attributes: ['name', 'code', 'id'] }
+            ],
+            order: [['id', 'DESC']],
+            limit: 10
+        });
+
+        if (!studentMarks || studentMarks.length === 0) {
+            return res.json([
+                { id: 1, message: 'Welcome to the IA Management System!', type: 'INFO', isRead: false, createdAt: new Date() }
+            ]);
+        }
+
+        // Get unique subjects
+        const subjectSet = new Set();
+        const notifications = [];
+        let notifId = 1;
+
+        studentMarks.forEach(mark => {
+            if (mark.subject && !subjectSet.has(mark.subject.id)) {
+                subjectSet.add(mark.subject.id);
+
+                // Create notification for recent mark upload
+                notifications.push({
+                    id: notifId++,
+                    message: `${mark.cieType} marks for ${mark.subject.name} have been uploaded`,
+                    type: 'CIE_ANNOUNCEMENT',
+                    isRead: false,
+                    createdAt: mark.createdAt || new Date()
+                });
+            }
+        });
+
+        // If no notifications, add welcome message
+        if (notifications.length === 0) {
+            notifications.push({
+                id: 1,
+                message: 'Welcome to the IA Management System!',
+                type: 'INFO',
+                isRead: false,
+                createdAt: new Date()
+            });
+        }
+
+        res.json(notifications);
+    } catch (error) {
+        console.error('Get student notifications error:', error);
+        res.json([
+            { id: 1, message: 'Welcome to the IA Management System!', type: 'INFO', isRead: false, createdAt: new Date() }
+        ]);
+    }
 });
 
 // --- Faculty Endpoints ---

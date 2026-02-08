@@ -61,6 +61,21 @@ const StudentDashboard = () => {
                     console.log("Fetched Marks:", data);
                     setRealMarks(data);
 
+                    // Calculate Summary Stats
+                    const totalMarks = data.reduce((sum, m) => sum + (m.totalScore || 0), 0);
+                    const totalMaxMarks = data.reduce((sum, m) => sum + (m.subject?.maxMarks || 50), 0); // Default 50 if missing
+
+                    // Avg Score scaled to 25 (as per UI requirement "22/25")
+                    // Formula: (Total Obtained / Total Max) * 25
+                    let avgScore25 = 0;
+                    if (totalMaxMarks > 0) {
+                        avgScore25 = Math.round((totalMarks / totalMaxMarks) * 25);
+                    }
+
+                    // Attendance Calculation (Average of all CIE entries)
+                    const totalAttendance = data.reduce((sum, m) => sum + (m.attendancePercentage || 0), 0);
+                    const avgAttendance = data.length > 0 ? Math.round(totalAttendance / data.length) : 0;
+
                     if (data.length > 0) {
                         const s = data[0].student;
                         setStudentInfo({
@@ -68,15 +83,25 @@ const StudentDashboard = () => {
                             rollNo: s.regNo,
                             branch: s.department,
                             semester: s.semester,
-                            attendance: 85,
-                            cgpa: 8.5
+                            attendance: avgAttendance, // Real avg attendance
+                            cgpa: 8.5, // CGPA still hardcoded as it's not in CIE data
+                            avgCieScore: `${avgScore25}/25` // Store formatted score
                         });
                     }
+
+                    // Calculate CIEs Completed
+                    const uniqueCIEs = new Set(data.map(m => m.cieType));
+                    const completedCount = uniqueCIEs.size;
+                    // Assuming total 3 CIEs for now based on user context
+                    setCieStatus(`${completedCount}/5`);
 
                     // Group marks by subject
                     const groupedMarks = {};
 
                     data.forEach(mark => {
+                        // Safety check for subject
+                        if (!mark.subject) return;
+
                         const subId = mark.subject.id;
                         if (!groupedMarks[subId]) {
                             groupedMarks[subId] = {
@@ -101,10 +126,6 @@ const StudentDashboard = () => {
                             groupedMarks[subId].cie5Score = mark.totalScore;
                         }
 
-                        // For Overview Total, let's take average of available marks for now, or just sum?
-                        // User's expectation: Best of? Or Avg? Or just latest?
-                        // For 2nd sem, usually Avg of Best 2. 
-                        // Let's just store them. The render function logic is separate.
                         groupedMarks[subId].attendance += (mark.attendancePercentage || 0);
                         groupedMarks[subId].count++;
                     });
@@ -142,11 +163,7 @@ const StudentDashboard = () => {
 
                     setRealSubjects(subjects);
 
-                    // Calculate CIEs Completed
-                    const uniqueCIEs = new Set(data.map(m => m.cieType));
-                    const completedCount = uniqueCIEs.size;
-                    // Assuming total 3 CIEs for now based on user context
-                    setCieStatus(`${completedCount}/3`);
+
 
                 } else {
                     console.error("Failed to fetch marks");
@@ -156,7 +173,6 @@ const StudentDashboard = () => {
             }
         };
 
-        fetchMarks();
         fetchMarks();
 
         // Fetch Announcements & Notifications
@@ -244,10 +260,10 @@ const StudentDashboard = () => {
     };
 
     const getStatus = (marks, max) => {
-        const percentage = (marks / max) * 100;
-        if (percentage >= 75) return { label: 'Distinction', color: '#166534', bg: '#dcfce7' };
-        if (percentage >= 60) return { label: 'First Class', color: '#1d4ed8', bg: '#dbeafe' };
-        if (percentage >= 35) return { label: 'Pass', color: '#0369a1', bg: '#e0f2fe' };
+        const percentage = (marks / max) * 50;
+        if (percentage >= 40) return { label: 'Distinction', color: '#166534', bg: '#dcfce7' };
+        if (percentage >= 30) return { label: 'First Class', color: '#1d4ed8', bg: '#dbeafe' };
+        if (percentage >= 20) return { label: 'Pass', color: '#0369a1', bg: '#e0f2fe' };
         return { label: 'At Risk', color: '#b91c1c', bg: '#fee2e2' };
     };
 
@@ -501,8 +517,29 @@ const StudentDashboard = () => {
                             </thead>
                             <tbody>
                                 {theorySubjects.length > 0 ? theorySubjects.map((item, idx) => {
-                                    const status = getStatus(item.total, 50);
-                                    const remarks = getRemarks(item.total, 50);
+                                    let maxMarks, statusScore;
+
+                                    if (selectedCIE === 'All') {
+                                        // Calculate average percentage of completed CIEs
+                                        let sum = 0;
+                                        let count = 0;
+                                        if (item.cie1 !== '-') { sum += item.cie1; count++; }
+                                        if (item.cie2 !== '-') { sum += item.cie2; count++; }
+                                        if (item.cie3 !== '-') { sum += item.cie3; count++; }
+                                        if (item.cie4 !== '-') { sum += item.cie4; count++; }
+                                        if (item.cie5 !== '-') { sum += item.cie5; count++; }
+
+                                        // Use average score out of 50 for status calculation
+                                        statusScore = count > 0 ? sum / count : 0;
+                                        maxMarks = 50;
+                                    } else {
+                                        // For specific CIE, use the actual score
+                                        statusScore = item.total;
+                                        maxMarks = 50;
+                                    }
+
+                                    const status = getStatus(statusScore, maxMarks);
+                                    const remarks = getRemarks(statusScore, maxMarks);
                                     return (
                                         <tr key={idx}>
                                             <td className={styles.codeText}>{item.code}</td>
@@ -757,7 +794,7 @@ const StudentDashboard = () => {
                             <Award size={24} color="#2563eb" />
                         </div>
                         <div className={styles.statCardContent}>
-                            <span className={styles.statCardValue}>22/25</span>
+                            <span className={styles.statCardValue}>{studentInfo.avgCieScore || '0/25'}</span>
                             <span className={styles.statCardLabel}>Avg CIE Score</span>
                         </div>
                     </div>
